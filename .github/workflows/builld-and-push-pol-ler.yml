@@ -10,7 +10,7 @@ on:
 
 env:
   AWS_REGION: eu-west-2
-  ECR_REPO: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+  ECR_REPO: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
   IMAGE_NAME: k3s/pol-ler
   SERVICE_PATH: .
 
