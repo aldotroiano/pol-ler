@@ -10,3 +10,4 @@ brotli==1.1.0
 sqlparse==0.5.1
 python-dateutil==2.9.0.post0
 twisted==24.7.0
+selenium==4.15.0

@@ -28,6 +28,7 @@ from scrapy.selector import Selector
 from pol.log import LogHandler
 from .feed import Feed
 from .client import ppReadBody, IGNORE_SIZE
+from .js_downloader import get_js_downloader, cleanup_js_downloader
 
 from twisted.logger import Logger
 
@@ -35,6 +36,12 @@ from twisted.logger import Logger
 log = Logger()
 
 class Downloader(object):
+
+    # Domains that typically require JavaScript rendering
+    JS_DOMAINS = {
+        'medium.com', 'netflixtechblog.com', 'dev.to', 'hashnode.com',
+        'substack.com', 'ghost.io', 'notion.so', 'airtable.com'
+    }
 
     def __init__(self, feed, debug, snapshot_dir, stat_tool, memon, request,
                  url, feed_config, selector_defer, sanitize, max_size):
@@ -49,6 +56,43 @@ class Downloader(object):
         self.selector_defer = selector_defer
         self.sanitize = sanitize
         self.max_size = max_size
+
+    def _needs_js_rendering(self, url):
+        """Check if a URL needs JavaScript rendering."""
+        from urllib.parse import urlparse
+        try:
+            parsed = urlparse(url)
+            domain = parsed.netloc.lower()
+            # Remove www. prefix for comparison
+            if domain.startswith('www.'):
+                domain = domain[4:]
+            return domain in self.JS_DOMAINS
+        except:
+            return False
+
+    def _download_with_js(self, url, user_agent):
+        """Download a page using JavaScript rendering."""
+        try:
+            js_downloader = get_js_downloader(user_agent, headless=True, timeout=30)
+            html_content, success, error = js_downloader.download_page(url)
+            
+            if success and html_content:
+                # Create a mock response object similar to what Twisted would return
+                from scrapy.http import TextResponse
+                from scrapy.http import Headers
+                
+                response = TextResponse(
+                    url=url,
+                    status=200,
+                    headers=Headers({'Content-Type': 'text/html; charset=utf-8'}),
+                    body=html_content.encode('utf-8')
+                )
+                return response, None
+            else:
+                return None, error or "Failed to download with JavaScript"
+                
+        except Exception as e:
+            return None, f"JavaScript downloader error: {str(e)}"
 
     def html2json(self, el):
         return [
@@ -329,6 +373,19 @@ class Site(resource.Resource):
             else:
                 downloader.writeResponse(request, sresponse, feed_config)
         else:
+            # Check if this URL needs JavaScript rendering
+            if downloader._needs_js_rendering(url):
+                print(f'Using JavaScript rendering for: {url}')
+                js_response, js_error = downloader._download_with_js(url, self.user_agent)
+                if js_response:
+                    if selector_defer:
+                        reactor.callLater(0, selector_defer.callback, js_response)
+                    else:
+                        downloader.writeResponse(request, js_response, feed_config)
+                    return
+                else:
+                    print(f'JavaScript rendering failed for {url}: {js_error}')
+                    # Fall back to regular download
             agent = BrowserLikeRedirectAgent(
                 Agent(reactor,
                     contextFactory=ScrapyClientContextFactory(), # skip certificate verification
@@ -341,8 +398,19 @@ class Site(resource.Resource):
                 b'GET',
                 url,
                 twisted_headers({
-                    'Accept': ['text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'],
-                    'Accept-Encoding': ['gzip, deflate, sdch'],
+                    'Accept': ['text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'],
+                    'Accept-Encoding': ['gzip, deflate, br'],
+                    'Accept-Language': ['en-US,en;q=0.9'],
+                    'Cache-Control': ['no-cache'],
+                    'Pragma': ['no-cache'],
+                    'Sec-Ch-Ua': ['"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"'],
+                    'Sec-Ch-Ua-Mobile': ['?0'],
+                    'Sec-Ch-Ua-Platform': ['"macOS"'],
+                    'Sec-Fetch-Dest': ['document'],
+                    'Sec-Fetch-Mode': ['navigate'],
+                    'Sec-Fetch-Site': ['none'],
+                    'Sec-Fetch-User': ['?1'],
+                    'Upgrade-Insecure-Requests': ['1'],
                     'User-Agent': [self.user_agent]
                 }),
                 None
