@@ -18,6 +18,7 @@ service nginx start > /dev/null
 
 python3 ./frontend/manage.py migrate 
 python3 ./frontend/manage.py loaddata fields.json 
+python3 ./frontend/manage.py compilemessages
 python3 ./frontend/manage.py collectstatic --noinput
 
 python3 ./downloader.py &

@@ -51,7 +51,7 @@ msgstr "We will answer ASAP"
 
 #: templates/frontend/index.html:5
 msgid "index_title"
-msgstr "PolitePol.com: Generate RSS feeds for any web page"
+msgstr "Pol-ler: Generate RSS feeds"
 
 #: templates/frontend/index.html:8 templates/frontend/index.html.py:20
 msgid "brand"
