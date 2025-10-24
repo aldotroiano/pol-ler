@@ -223,7 +223,7 @@ class Downloader(object):
                 error_msg = error.getErrorMessage()
                 if isinstance(error_msg, bytes):
                     error_msg = error_msg.decode('utf-8', errors='replace')
-                err_message = self.error_html('<h1>PolitePol says: "Something wrong"</h1> <p><b>Try to refresh page or contact us by email: <a href="mailto:politepol.com@gmail.com">politepol.com@gmail.com</a></b>\n(Help us to improve our service with your feedback)</p> <p><i>Scary mantra: %s</i></p>' % escape(error_msg))
+                err_message = self.error_html('<h1>Pol-ler says: "Something wrong"</h1> <p><b>Try refreshing the page</p> <p><i>Scary mantra: %s</i></p>' % escape(error_msg))
                 self.request.write(err_message.encode('utf-8'))
 
             self.request.finish()
