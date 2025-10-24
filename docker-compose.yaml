@@ -10,7 +10,8 @@ services:
       DB_HOST: 'db-pol-ler'
       DB_PORT: '5432'
       WEB_PORT: '8088'
-      TIME_ZONE: 'America/Fortaleza'
+      TIME_ZONE: 'Europe/London'
+      CSRF_TRUSTED_ORIGINS: 'http://localhost:8088,http://127.0.0.1:8088'
     image: pol-ler:latest
     depends_on:
       db-pol-ler:

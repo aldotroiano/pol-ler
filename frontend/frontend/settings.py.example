@@ -21,12 +21,19 @@ PROJECT_DIR = os.path.join(BASE_DIR, 'frontend')
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'e2e%g-cu_f9=#^5=(8et$@(y+wu+dflyi2h)nim#r0-m=kqd^@'
+# Set via environment variable for security. Generate with: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'this-is-a-secret')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+
+# CSRF Settings - Allow trusted origins
+# Can be set via CSRF_TRUSTED_ORIGINS environment variable as comma-separated list
+CSRF_TRUSTED_ORIGINS = []
+if os.environ.get('CSRF_TRUSTED_ORIGINS'):
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get('CSRF_TRUSTED_ORIGINS').split(',')]
 
 
 # Application definition
@@ -172,7 +179,7 @@ DOWNLOADER_PAGE_URL = '/downloader?url='
 
 FEED_PAGE_URL = '/feed/'
 
-DOWNLOADER_USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36'
+DOWNLOADER_USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 # limit of seconds in which user can access separate feed
 FEED_REQUEST_PERIOD_LIMIT = 0
 SNAPSHOT_DIR = '/tmp'
