@@ -1,0 +1,94 @@
+replicaCount: 1
+
+image:
+  repository: ************.dkr.ecr.eu-west-2.amazonaws.com/pol-ler
+  tag: 0.5.4
+  pullPolicy: IfNotPresent
+
+## Image pull secrets if you are using ECR
+#imagePullSecrets:
+#  - name: ecr-pull
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  annotations: {}
+  labels: {}
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+podAnnotations: {}
+podLabels: {}
+priorityClassName: ""
+
+podSecurityContext:
+  enabled: false
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  enabled: false
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+
+containerPort: 8088
+
+command:
+  - ./wait-for-it.sh
+  - pol-ler-postgres
+  - /bin/bash
+  - ./frontend/start.sh
+
+env:
+  - name: WEB_PORT
+    value: "8088"
+  - name: TIME_ZONE
+    value: "Europe/London"
+  - name: DJANGO_SECRET_KEY
+    value: "this-is-a-secret"
+  - name: CSRF_TRUSTED_ORIGINS
+    value: "http://pol-ler"
+
+# PostgreSQL configuration
+postgres:
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  database: politepol
+  user: poluser
+  password: polpassword  # Change this!
+  persistence:
+    size: 8Gi
+    storageClass: ""  # Use default storage class / longhorn / etc.
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+nodeSelector: {}
+affinity: {}
+tolerations: []
+
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 10
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 45
+  periodSeconds: 10
+

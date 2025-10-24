@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pol-ler
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-username/repository.git
+    targetRevision: main
+    path: charts/pol-ler
+    helm:
+      valueFiles: []
+  destination:
+    server: https://kubernetes.default.svc
+    # namespace to deploy the chart to
+    namespace: pol-ler
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+
+
