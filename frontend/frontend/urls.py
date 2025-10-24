@@ -9,6 +9,7 @@ from django.contrib import admin
 from . import views
 
 urlpatterns = [
+    path('health', views.health, name='health'),
     path('', views.index, name='index'),
     path('setup', views.setup, name='setup'),
     re_path(r'^preview/([0-9]+)$', views.preview, name='preview'),

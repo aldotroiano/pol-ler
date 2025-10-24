@@ -18,6 +18,10 @@ from .setup_tool import get_selection_tag_ids, build_xpathes_for_items
 from .setup_tool_ext import build_xpath_results
 from .models import Feed, Field, FeedField
 
+def health(request):
+    """Simple health check endpoint"""
+    return HttpResponse('OK', status=200)
+
 def index(request):
     if request.method == 'GET' and 'url' in request.GET:
         form = IndexForm(request.GET)
