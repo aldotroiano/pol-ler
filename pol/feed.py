@@ -70,6 +70,9 @@ class Feed(object):
                 md5hash = row[0]
                 created = row[1]
                 post_id = row[2]
+                # Ensure database datetime is timezone-naive for consistent comparison
+                if created and hasattr(created, 'tzinfo') and created.tzinfo is not None:
+                    created = created.replace(tzinfo=None)
                 fetched_dates[md5hash] = created
 
             cur_time = datetime.datetime.utcnow()
@@ -103,9 +106,10 @@ class Feed(object):
         try:
             # Try to parse the date string using dateutil parser which is quite flexible
             parsed_date = dateutil_parser.parse(date_str.strip())
-            # Make sure the date has timezone info, if not, assume UTC
-            if parsed_date.tzinfo is None:
-                parsed_date = parsed_date.replace(tzinfo=None)
+            # Convert to timezone-naive datetime for consistent comparison
+            if parsed_date.tzinfo is not None:
+                # Convert to UTC and remove timezone info
+                parsed_date = parsed_date.astimezone(datetime.timezone.utc).replace(tzinfo=None)
             return parsed_date
         except (ValueError, TypeError, OverflowError):
             log.warn('Failed to parse date: {date!r}', date=date_str)
