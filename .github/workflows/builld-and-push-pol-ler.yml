@@ -3,7 +3,7 @@ name: Build and Push pol-ler to ECR
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'versions.env'
   workflow_dispatch:
