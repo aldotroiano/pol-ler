@@ -253,6 +253,47 @@ def delete_feed(request, feed_id):
     
     return HttpResponseBadRequest('Only POST method supported')
 
+def edit_feed_name(request, feed_id):
+    if request.method == 'POST':
+        try:
+            feed = Feed.objects.get(id=feed_id)
+            new_name = request.POST.get('name', '').strip()
+            feed.name = new_name if new_name else None
+            feed.save()
+            return HttpResponseRedirect(reverse('feeds'))
+        except Feed.DoesNotExist:
+            return HttpResponseBadRequest('Feed not found')
+    
+    return HttpResponseBadRequest('Only POST method supported')
+
+def edit_feed_names(request):
+    if request.method == 'POST':
+        # Get all feed names from the form
+        feed_names = {}
+        for key, value in request.POST.items():
+            if key.startswith('feed_name_'):
+                feed_id = key.replace('feed_name_', '')
+                try:
+                    feed_id = int(feed_id)
+                    feed_names[feed_id] = value.strip() if value.strip() else None
+                except ValueError:
+                    continue
+        
+        # Update all feeds
+        updated_count = 0
+        for feed_id, new_name in feed_names.items():
+            try:
+                feed = Feed.objects.get(id=feed_id)
+                feed.name = new_name
+                feed.save()
+                updated_count += 1
+            except Feed.DoesNotExist:
+                continue
+        
+        return HttpResponseRedirect(reverse('feeds'))
+    
+    return HttpResponseBadRequest('Only POST method supported')
+
 @xframe_options_exempt
 def downloader_proxy(request):
     """Proxy requests to the downloader service running on port 1234"""
