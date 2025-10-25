@@ -14,6 +14,7 @@ urlpatterns = [
     path('setup', views.setup, name='setup'),
     re_path(r'^preview/([0-9]+)$', views.preview, name='preview'),
     path('feeds', views.feeds, name='feeds'),
+    path('feeds/edit-names', views.edit_feed_names, name='edit_feed_names'),
     re_path(r'^feeds/delete/([0-9]+)$', views.delete_feed, name='delete_feed'),
     path('contact', views.contact, name='contact'),
     path('admin/', admin.site.urls),
