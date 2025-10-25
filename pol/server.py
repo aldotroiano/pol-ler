@@ -361,7 +361,7 @@ class Site(resource.Resource):
         self.max_size = max_size
         self.downloadercls = downloadercls or Downloader
 
-    def startRequest(self, request, url, feed_config = None, selector_defer=None, sanitize=False):
+    def startRequest(self, request, url, feed_config = None, selector_defer=None, sanitize=False, js_mode='auto'):
         downloader = self.downloadercls(self.feed, self.debug, self.snapshot_dir, self.stat_tool, self.memon,
                                         request=request, url=url, feed_config=feed_config,
                                         selector_defer=selector_defer, sanitize=sanitize, max_size=self.max_size)
@@ -374,7 +374,15 @@ class Site(resource.Resource):
                 downloader.writeResponse(request, sresponse, feed_config)
         else:
             # Check if this URL needs JavaScript rendering
-            if downloader._needs_js_rendering(url):
+            use_js = False
+            if js_mode == 'on':
+                use_js = True
+            elif js_mode == 'off':
+                use_js = False
+            else: # auto
+                use_js = downloader._needs_js_rendering(url)
+
+            if use_js:
                 print(f'Using JavaScript rendering for: {url}')
                 js_response, js_error = downloader._download_with_js(url, self.user_agent)
                 if js_response:
@@ -437,8 +445,13 @@ class Site(resource.Resource):
         '''
         if b'url' in request.args: # page for frontend
             url = request.args[b'url'][0]
+            js_mode = b'auto'
+            if b'js' in request.args:
+                val = request.args[b'js'][0]
+                if val in [b'on', b'off', b'auto']:
+                    js_mode = val
 
-            self.startRequest(request, url, sanitize=True)
+            self.startRequest(request, url, sanitize=True, js_mode=js_mode.decode('utf-8') if isinstance(js_mode, bytes) else js_mode)
             return NOT_DONE_YET
         elif self.feed_regexp.match(request.uri) is not None: # feed
 

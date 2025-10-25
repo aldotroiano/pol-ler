@@ -289,6 +289,7 @@ def downloader_proxy(request):
     """Modern downloader that works without Twisted server"""
     if request.method == 'GET':
         url_param = request.GET.get('url', '')
+        js_mode = request.GET.get('js', '')
         if not url_param:
             return HttpResponseBadRequest('URL parameter is required')
         
@@ -299,6 +300,8 @@ def downloader_proxy(request):
         try:
             # Use the existing Twisted server if available, otherwise fallback
             downloader_url = f"http://localhost:1234/?url={url_param}"
+            if js_mode in ['on', 'off', 'auto']:
+                downloader_url += f"&js={js_mode}"
             response = requests.get(downloader_url, timeout=60)
             return HttpResponse(
                 response.content,

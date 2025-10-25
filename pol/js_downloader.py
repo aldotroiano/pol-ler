@@ -40,7 +40,7 @@ class JSEnabledDownloader:
         chrome_options.add_argument('--disable-extensions')
         chrome_options.add_argument('--disable-plugins')
         chrome_options.add_argument('--disable-images')  # Speed up loading
-        chrome_options.add_argument('--disable-javascript')  # We'll enable this selectively
+        # Enable JS for rendering dynamic pages (do not disable JavaScript)
         chrome_options.add_argument('--window-size=1920,1080')
         
         # Anti-detection options
