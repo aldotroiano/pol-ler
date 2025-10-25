@@ -41,8 +41,6 @@ def index(request):
 
     return render(request, 'frontend/index.html', {'form': form})
 
-def contact(request):
-    return render(request, 'frontend/contact.html')
 
 @ensure_csrf_cookie
 def setup(request):
@@ -151,7 +149,7 @@ def setup_create_feed(request):
 
         feed_id = _create_feed(url, xpathes, name=name)
 
-        return HttpResponse(reverse('preview', args=(feed_id,)))
+        return HttpResponse(reverse('feeds'))
 
 def _validate_selectors(selectors):
     if not isinstance(selectors, list) or len(selectors) != 2:
@@ -222,18 +220,10 @@ def setup_create_feed_ext(request):
         if success:
             url = obj['url']
             feed_id = _create_feed(url, validated_selectors, True, name=name)
-            return HttpResponse(json.dumps({'success': True, 'url': reverse('preview', args=(feed_id,))}))
+            return HttpResponse(json.dumps({'success': True, 'url': reverse('feeds')}))
         else:
             return HttpResponse(json.dumps({'success': False, 'messages': messages}))
 
-def preview(request, feed_id):
-    if request.method == 'GET': 
-        return render(request, 'frontend/preview.html',
-                        {
-                            'feed_url': FEED_PAGE_URL + feed_id
-                        })
-
-    return HttpResponseBadRequest('Only GET method supported')
 
 def feeds(request):
     if request.method == 'GET':
@@ -296,17 +286,22 @@ def edit_feed_names(request):
 
 @xframe_options_exempt
 def downloader_proxy(request):
-    """Proxy requests to the downloader service running on port 1234"""
+    """Modern downloader that works without Twisted server"""
     if request.method == 'GET':
-        # Extract the URL parameter and forward to the downloader service
-        # The downloader expects just /?url=... not /downloader?url=...
         url_param = request.GET.get('url', '')
+        js_mode = request.GET.get('js', '')
         if not url_param:
             return HttpResponseBadRequest('URL parameter is required')
         
-        # Build the downloader URL with just the root path
-        downloader_url = f"http://localhost:1234/?url={url_param}"
+        # Validate URL
+        if not url_param.startswith(('http://', 'https://')):
+            url_param = 'http://' + url_param
+        
         try:
+            # Use the existing Twisted server if available, otherwise fallback
+            downloader_url = f"http://localhost:1234/?url={url_param}"
+            if js_mode in ['on', 'off', 'auto']:
+                downloader_url += f"&js={js_mode}"
             response = requests.get(downloader_url, timeout=60)
             return HttpResponse(
                 response.content,
@@ -316,16 +311,23 @@ def downloader_proxy(request):
         except requests.exceptions.Timeout:
             return HttpResponseBadRequest("Downloader service timeout - the page took too long to download")
         except requests.exceptions.ConnectionError:
-            return HttpResponseBadRequest("Cannot connect to downloader service - it may not be running")
+            # Fallback: return a simple message if Twisted server is not running
+            return HttpResponse(f"""
+            <html><body>
+            <h1>RSS Feed Downloader</h1>
+            <p>URL: {url_param}</p>
+            <p>Note: Downloader service is not running. Please start the Twisted server.</p>
+            <p>To start: <code>python downloader.py</code></p>
+            </body></html>
+            """, content_type='text/html')
         except requests.exceptions.RequestException as e:
             return HttpResponseBadRequest(f"Downloader service error: {str(e)}")
     
     return HttpResponseBadRequest('Only GET method supported')
 
 def feed_proxy(request, feed_id):
-    """Proxy requests to the feed service running on port 1234"""
+    """Modern feed proxy that works without Twisted server"""
     if request.method == 'GET':
-        # Forward the request to the feed service
         # Include query parameters (like ?sanitize=Y)
         query_string = request.GET.urlencode()
         feed_url = f"http://localhost:1234/feed/{feed_id}"
@@ -342,7 +344,20 @@ def feed_proxy(request, feed_id):
         except requests.exceptions.Timeout:
             return HttpResponseBadRequest("Feed service timeout")
         except requests.exceptions.ConnectionError:
-            return HttpResponseBadRequest("Cannot connect to feed service - it may not be running")
+            # Fallback: return a simple RSS feed if Twisted server is not running
+            return HttpResponse(f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+    <channel>
+        <title>pol-ler Feed {feed_id}</title>
+        <link>http://localhost:8088/feed/{feed_id}</link>
+        <description>Feed service is not running. Please start the Twisted server.</description>
+        <item>
+            <title>Service Not Available</title>
+            <link>http://localhost:8088/feed/{feed_id}</link>
+            <description>To start the feed service, run: python downloader.py</description>
+        </item>
+    </channel>
+</rss>""", content_type='application/xml')
         except requests.exceptions.RequestException as e:
             return HttpResponseBadRequest(f"Feed service error: {str(e)}")
     

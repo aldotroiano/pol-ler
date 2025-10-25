@@ -2,120 +2,145 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Active Feeds - pol-ler{% endblock %}
-
-{% block logo %}
-    <a href="{% url 'index' %}" class="brand-pic" style="display: inline-flex; align-items: center; padding: 8px 15px; text-decoration: none;">
-        <span style="font-size: 20px; font-weight: bold; color: #333;">pol-ler</span>
-    </a>
-{% endblock %}
+{% block title %}Active Feeds{% endblock %}
 
 {% block content %}
 <div class="feeds-list">
-    <h2>Active Feeds</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Active Feeds</h2>
+        {% if feeds %}
+            <div>
+                <button id="edit-names-btn" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Edit Names
+                </button>
+                <button id="save-names-btn" class="btn btn-success" style="display: none;">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+                <button id="cancel-edit-btn" class="btn btn-secondary" style="display: none;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        {% endif %}
+    </div>
     
     {% if feeds %}
-        <div style="margin-bottom: 20px;">
-            <button id="edit-names-btn" class="btn btn-warning">Edit Names</button>
-            <button id="save-names-btn" class="btn btn-success" style="display: none;">Save Changes</button>
-            <button id="cancel-edit-btn" class="btn btn-default" style="display: none;">Cancel</button>
-        </div>
-        
         <!-- Normal view - shown by default -->
         <div id="normal-view">
-            <table class="table table-striped table-bordered">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>URL</th>
-                        <th>Created</th>
-                        <th>Edited</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for feed in feeds %}
-                    <tr>
-                        <td>{{ feed.id }}</td>
-                        <td>
-                            {% if feed.name %}
-                                <strong>{{ feed.name }}</strong>
-                            {% else %}
-                                <span class="text-muted">(no name)</span>
-                            {% endif %}
-                        </td>
-                        <td style="max-width: 300px; word-wrap: break-word;">{{ feed.uri }}</td>
-                        <td>{{ feed.created|date:"Y-m-d H:i" }}</td>
-                        <td>
-                            {% if feed.edited %}
-                                <span class="label label-info">Yes</span>
-                            {% else %}
-                                <span class="label">No</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'preview' feed.id %}" class="btn btn-small btn-primary">View</a>
-                            <form method="post" action="{% url 'delete_feed' feed.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this feed?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-small btn-danger">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>URL</th>
+                            <th>Created</th>
+                            <th>Edited</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feed in feeds %}
+                        <tr>
+                            <td><span class="badge bg-primary">{{ feed.id }}</span></td>
+                            <td>
+                                {% if feed.name %}
+                                    <strong>{{ feed.name }}</strong>
+                                {% else %}
+                                    <span class="text-muted">(no name)</span>
+                                {% endif %}
+                            </td>
+                            <td style="max-width: 300px; word-wrap: break-word;">
+                                <small class="text-muted">{{ feed.uri }}</small>
+                            </td>
+                            <td>{{ feed.created|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if feed.edited %}
+                                    <span class="badge bg-info">Yes</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'feed_proxy' feed.id %}" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="fas fa-rss"></i> View
+                                </a>
+                                <form method="post" action="{% url 'delete_feed' feed.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this feed?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <!-- Edit form - hidden by default -->
         <form id="edit-form" method="post" action="{% url 'edit_feed_names' %}" style="display: none;">
             {% csrf_token %}
-            <table class="table table-striped table-bordered">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>URL</th>
-                        <th>Created</th>
-                        <th>Edited</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for feed in feeds %}
-                    <tr>
-                        <td>{{ feed.id }}</td>
-                        <td>
-                            <input type="text" name="feed_name_{{ feed.id }}" value="{{ feed.name|default:'' }}" 
-                                   class="form-control" style="width: 100%;" placeholder="Enter feed name">
-                        </td>
-                        <td style="max-width: 300px; word-wrap: break-word;">{{ feed.uri }}</td>
-                        <td>{{ feed.created|date:"Y-m-d H:i" }}</td>
-                        <td>
-                            {% if feed.edited %}
-                                <span class="label label-info">Yes</span>
-                            {% else %}
-                                <span class="label">No</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'preview' feed.id %}" class="btn btn-small btn-primary">View</a>
-                            <form method="post" action="{% url 'delete_feed' feed.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this feed?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-small btn-danger">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>URL</th>
+                            <th>Created</th>
+                            <th>Edited</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feed in feeds %}
+                        <tr>
+                            <td><span class="badge bg-primary">{{ feed.id }}</span></td>
+                            <td>
+                                <input type="text" name="feed_name_{{ feed.id }}" value="{{ feed.name|default:'' }}" 
+                                       class="form-control" placeholder="Enter feed name">
+                            </td>
+                            <td style="max-width: 300px; word-wrap: break-word;">
+                                <small class="text-muted">{{ feed.uri }}</small>
+                            </td>
+                            <td>{{ feed.created|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if feed.edited %}
+                                    <span class="badge bg-info">Yes</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'feed_proxy' feed.id %}" class="btn btn-sm btn-primary" target="_blank">
+                                    <i class="fas fa-rss"></i> View
+                                </a>
+                                <form method="post" action="{% url 'delete_feed' feed.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this feed?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </form>
         
-        <p class="text-muted">Total feeds: {{ feeds|length }}</p>
+        <div class="mt-3">
+            <span class="badge bg-secondary">Total feeds: {{ feeds|length }}</span>
+        </div>
     {% else %}
-        <div class="alert alert-info">
-            <p>No feeds created yet.</p>
-            <p><a href="{% url 'index' %}" class="btn btn-primary">Create your first feed</a></p>
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle fa-3x mb-3"></i>
+            <h4>No feeds created yet</h4>
+            <p class="mb-3">Get started by creating your first RSS feed.</p>
+            <a href="{% url 'index' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> Create your first feed
+            </a>
         </div>
     {% endif %}
 </div>

@@ -19,7 +19,7 @@ from .db import get_conn
 
 log = Logger()
 
-class Feed(object):
+class Feed:
 
     url_hash_regexp = re.compile('(#.*)?$')
 

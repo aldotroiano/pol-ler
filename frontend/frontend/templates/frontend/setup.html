@@ -128,6 +128,14 @@
         </form>
     </div>
     <div style="float:right">
+        <div style="display:inline-block; margin-right:10px; vertical-align:middle">
+            <label for="js-mode" style="margin-right:6px">JS:</label>
+            <select id="js-mode" class="input-small" style="height:34px">
+                <option value="auto" selected>Auto</option>
+                <option value="on">Force JS</option>
+                <option value="off">No JS</option>
+            </select>
+        </div>
         <a id="st-clicker-trigger" href="javascript:void(0)" style="display:none" class="has-tooltip" title="{% trans 'setup.clicker_tip' %}"
            data-trigger="hover focus manual" data-animation="true"
            confirm-text="{% trans 'setup.confirm_loose' %}"><img src="{% static 'frontend/images/target48.png' %}" /></a>
@@ -221,7 +229,7 @@ li.ext-result dl {
   </ol>
 </div>
 
-<iframe src="{{ external_page_url }}" frameborder="0" style="width:100%;/*for footer*/; border:solid">
+<iframe id="source-iframe" src="{{ external_page_url }}" frameborder="0" style="width:100%; border:solid; min-height:400px">
 
 </iframe>
 
@@ -252,15 +260,16 @@ li.ext-result dl {
         function update_iframe_heignt()
         {
             var y_offset = getCumulativeOffset(iframe_element).y,
-                footer_height = $('#footer').height();
-            var height = $(window).height()-y_offset-footer_height;
-            if (height < 100)
-            {
-                iframe_element.style.height = (iframe_element.contentWindow.document.body.offsetHeight) + 'px';
-            }
-            else
+                footer_height = $('#footer').length ? ($('#footer').height() || 0) : 0;
+            var height = $(window).height() - y_offset - footer_height;
+            if (isNaN(height) || height < 200) {
+                var doc = iframe_element.contentWindow && iframe_element.contentWindow.document;
+                var content_h = doc && doc.body ? (doc.body.scrollHeight || doc.body.offsetHeight || 0) : 0;
+                var final_h = Math.max(content_h, 600);
+                iframe_element.style.height = final_h + 'px';
+            } else {
                 iframe_element.style.height = height + 'px';
-            console.log(iframe_element.style.height);
+            }
         }
 
         $(window).resize(function () {
@@ -270,9 +279,28 @@ li.ext-result dl {
             }
         });
 
-        $('iframe').load(function() {
+        function set_iframe_src_with_js(mode) {
+            var base = '{{ external_page_url }}';
+            // Strip existing js param if present
+            var cleaned = base.replace(/([&?])js=(on|off|auto)/, '$1');
+            var sep = cleaned.indexOf('?') === -1 ? '?' : (cleaned.endsWith('?') || cleaned.endsWith('&') ? '' : '&');
+            var src = cleaned + sep + 'js=' + mode;
+            $('#source-iframe').attr('src', src);
+        }
+
+        $('iframe').on('load', function() {
             iframe_element = this;
             update_iframe_heignt();
+        });
+
+        // Initialize JS mode control and set initial iframe src with js=auto
+        $(function(){
+            var initialMode = ($('#js-mode').val() || 'auto');
+            set_iframe_src_with_js(initialMode);
+            $('#js-mode').on('change', function(){
+                loader(true);
+                set_iframe_src_with_js(this.value);
+            });
         });
     </script>
 {% endblock %}

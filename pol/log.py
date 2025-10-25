@@ -13,7 +13,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-class LogHandler(object):
+class LogHandler:
     """Handler of twisted log meaasges"""
 
     def __init__(self):

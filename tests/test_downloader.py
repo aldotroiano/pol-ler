@@ -11,7 +11,7 @@ from pol.log import LogHandler
 from pol.server import Server
 
 
-class MFTests(object):
+class MFTests:
 
     def __init__(self):
         self.log = Logger()

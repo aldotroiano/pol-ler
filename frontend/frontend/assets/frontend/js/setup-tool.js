@@ -492,7 +492,7 @@ $(document).ready(function(){
    
     $('#create').click(onCreateButtonClick);
  
-    $('iframe').load(function(){
+    $('iframe').on('load', function(){
         // init id2el
         $('iframe').contents().find('*[tag-id]').each(function(){
             id2el[$(this).attr('tag-id')] = this;
