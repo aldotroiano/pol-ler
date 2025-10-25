@@ -20,8 +20,7 @@ PROJECT_DIR = os.path.join(BASE_DIR, 'frontend')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# Set via environment variable for security. Generate with: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+# Generate with: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'this-is-a-secret')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -46,7 +45,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    'pipeline',
     'frontend',
 ]
 
@@ -127,59 +125,19 @@ STATICFILES_DIRS = (
 
 STATIC_ROOT = os.path.join(PROJECT_DIR, 'static/')
 
-STATICFILES_STORAGE = 'pipeline.storage.PipelineManifestStorage'
+# STATICFILES_STORAGE = 'pipeline.storage.PipelineManifestStorage'  # Removed - using modern build tools
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'pipeline.finders.PipelineFinder',
 )
-
-# Pipeline configuration for django-pipeline 3.x
-PIPELINE = {
-    'PIPELINE_ENABLED': True,
-    'COMPILERS': (
-        'pipeline.compilers.less.LessCompiler',
-        'pipeline.compilers.sass.SASSCompiler',
-    ),
-    'STYLESHEETS': {
-        'app': {
-            'source_filenames': (
-              'frontend/stylesheets/application.css',
-              'frontend/stylesheets/bootstrap_and_overrides.css.less',
-              'frontend/stylesheets/wizard.css.scss',
-              'frontend/stylesheets/google-code-prettify/prettify.css',
-            ),
-            'output_filename': 'frontend/stylesheets/app.css',
-            'extra_context': {
-                'media': 'all',
-            },
-        },
-    },
-    'JAVASCRIPT': {
-        'app': {
-            'source_filenames': (
-              'frontend/js/jquery.js',
-              'frontend/js/jquery.browser.js',
-              'frontend/js/jquery.jfeed.js',
-              'frontend/js/bootstrap.js',
-              'frontend/js/bootstrap_and_overrides.js',
-              'frontend/js/xregexp-all.js',
-              'frontend/js/google-code-prettify/prettify.js',
-              'frontend/js/setup-tool.js',
-              'frontend/js/setup-tool-ext.js',
-              'frontend/js/help.js',
-            ),
-            'output_filename': 'frontend/js/app.js',
-        }
-    }
-}
 
 DOWNLOADER_PAGE_URL = '/downloader?url='
 
 FEED_PAGE_URL = '/feed/'
 
-DOWNLOADER_USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+DOWNLOADER_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 # limit of seconds in which user can access separate feed
 FEED_REQUEST_PERIOD_LIMIT = 0
 SNAPSHOT_DIR = '/tmp'
